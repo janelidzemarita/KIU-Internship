@@ -4,22 +4,22 @@ import com.badlogic.gdx.ScreenAdapter;
 
 public class TetrisScreen extends ScreenAdapter {
 	
-	TetrisStage _stage;
+	TetrisStage stage;
 
 	@Override
 	public void show() {
-		_stage = new TetrisStage();
-		_stage.init();
+		stage = new TetrisStage();
+		stage.init();
 	}
 
 	@Override
 	public void render(float delta) {
-        _stage.act(delta);
-        _stage.draw();
+        stage.act(delta);
+        stage.draw();
 	}
 
 	@Override
 	public void resize(int width, int height) {
-        _stage.getViewport().update(width, height, true);
+        stage.getViewport().update(width, height, true);
 	}
 }

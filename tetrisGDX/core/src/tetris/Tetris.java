@@ -1,74 +1,122 @@
 package tetris;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.WindowConstants;
-
 public class Tetris {
 
-	static final Color[] COLORS = { Color.BLACK, Color.BLUE, Color.RED, Color.GREEN, Color.CYAN, Color.MAGENTA,
-			Color.ORANGE, Color.YELLOW };
+    static final Color[] COLORS = {Color.BLACK.darker(), Color.BLUE.darker(), Color.RED.darker(), Color.GREEN.darker(), Color.CYAN.darker(), Color.MAGENTA.darker(),
+            Color.ORANGE.darker(), Color.YELLOW.darker()};
 
-	public static void main(String[] args) {
+    public static void main(String[] args) {
 
-		JFrame frame = new JFrame("Tetris");
+        JFrame frame = new JFrame("Tetris");
 
-		JPanel panel = new JPanel();
-		panel.setPreferredSize(new Dimension(400, 700));
+        JPanel panel = new JPanel();
 
-		frame.add(panel);
+        panel.setPreferredSize(new Dimension(400, 700));
 
-		frame.pack();
+        frame.add(panel);
 
-		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        frame.pack();
 
-		frame.setVisible(true);
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-		Graphics2D graphics = (Graphics2D) panel.getGraphics();
+        frame.setVisible(true);
 
-		TetrisModel model = new TetrisModel(TetrisModel.DEFAULT_WIDTH, TetrisModel.DEFAULT_HEIGHT,
-				TetrisModel.DEFAULT_COLORS_NUMBER);
+        Graphics2D graphics = (Graphics2D) panel.getGraphics();
 
-		View view = new View(new Graphics() {
+        TetrisModel model = new TetrisModel();
 
-			@Override
-			public void drawBoxAt(int i, int j, int size, int value) {
-				graphics.setColor(COLORS[value]);
-				graphics.fillRect(i, j, size, size);
-			}
+        View view = new View(new Graphics() {
 
-		});
+            @Override
+            public void drawBoxAt(int x, int y, int size, int colorIndex) {
+                // Set the color based on the colorIndex
+                graphics.setColor(Tetris.COLORS[colorIndex]);
 
-		Controller controller = new Controller(model, view);
+                // Draw the filled rectangle (the box) at the given (x, y) position
+                graphics.fillRect(x, y, size, size);
 
-		frame.addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyPressed(KeyEvent e) {
-				switch (e.getKeyCode()) {
-				case KeyEvent.VK_LEFT: {
-					controller.moveLeft();
-					break;
-				}
-				case KeyEvent.VK_RIGHT: {
-					controller.moveRight();
-					break;
-				}
-				}
-			}
-		});
+                // Optionally, you can draw the outline of the box to make it more visually distinct
+                graphics.setColor(Color.BLACK); // Set the outline color (e.g., black)
+                graphics.drawRect(x, y, size, size);
+            }
 
-		ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
-		service.scheduleAtFixedRate(controller::slideDown, 0, 1, TimeUnit.SECONDS);
+            @Override
+            public void drawBoxAt(int i, int j, int value) {
+                graphics.setColor(COLORS[value]);
+                graphics.fillRect(i, j, View.BOX_SIZE, View.BOX_SIZE);
+            }
 
-	}
+            @Override
+            public void fillRect(int i, int i1, int i2, int i3) {
+                graphics.fillRect(i, i1, i2, i3);
+            }
+
+            @Override
+            public void drawString(String s, int i, int i1) {
+                graphics.drawString(s, i, i1);
+            }
+
+            @Override
+            public void setColor(Color color) {
+                graphics.setColor(color);
+            }
+
+            @Override
+            public void setFont(Font font) {
+                graphics.setFont(font);
+            }
+
+        });
+
+        Controller controller = new Controller(model, view);
+
+        frame.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (model.state.isGameOver()) {
+                    model.gameOver();
+                    if (e.getKeyCode() == KeyEvent.VK_R) {
+                        controller.restart();
+                    } else if (e.getKeyCode() == KeyEvent.VK_Q) {
+                        controller.quitGame();
+                    }
+                } else {
+                    switch (e.getKeyCode()) {
+                        case KeyEvent.VK_LEFT:
+                            controller.moveLeft();
+                            break;
+                        case KeyEvent.VK_RIGHT:
+                            controller.moveRight();
+                            break;
+                        case KeyEvent.VK_UP:
+                            controller.rotate();
+                            break;
+                        case KeyEvent.VK_DOWN:
+                            controller.slideDown();
+                            break;
+                        case KeyEvent.VK_SPACE:
+                            controller.drop();
+                            break;
+                        case KeyEvent.VK_P:
+                            model.pause();
+                            break;
+                        default:
+                            throw new IllegalStateException("Unexpected value: " + e.getKeyCode());
+                    }
+                }
+            }
+        });
+
+        ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
+        service.scheduleAtFixedRate(controller::slideDown, 0, 1, TimeUnit.SECONDS);
+    }
 
 }
