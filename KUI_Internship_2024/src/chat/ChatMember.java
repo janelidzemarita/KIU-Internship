@@ -41,9 +41,9 @@ public class ChatMember {
 		try (Scanner scanner = new Scanner(socket.getInputStream())) {
 			while (scanner.hasNextLine()) {
 				String command = scanner.nextLine();
-				ChatServer.service.submit(() -> {
+				ChatServer.service.submit(() ->
 					process(command);
-				});
+				);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -68,13 +68,31 @@ public class ChatMember {
 		}
 			break;
 		case "exit": {
-			// TODO: homework
+			if (name != null) {
+				server.publish(name + " has left the chat");
+			}
+			// Remove this member from the server list and close the connection
+			closeConnection();
 		}
 			break;
 		default: {
 			System.err.println("unknown command " + command);
 		}
 		}
+	}
+	private void closeConnection() {
+		// Notify the server to remove this member
+		server.members.remove(this);
+
+		// Close the worker thread for sending messages
+		sendingWorker.shutdown();
+
+		// Close the printer output stream
+		if (printer != null) {
+			printer.close();
+		}
+
+		System.out.println("Connection closed for " + name);
 	}
 
 	public void send(String message) {
